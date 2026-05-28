@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Migração</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.24.0/dist/tabler-icons.min.css">
+<style>
+:root {
+  --bg:       #090909;
+  --bg2:      #0f0f0f;
+  --bg3:      #141414;
+  --bg4:      #1a1a1a;
+  --bg5:      #202020;
+  --border:   #1e1e1e;
+  --border2:  #2a2a2a;
+  --border3:  #333;
+  --accent:   #ff6500;
+  --accent2:  #ff8c3a;
+  --accent-d: rgba(255,101,0,.12);
+  --accent-g: rgba(255,101,0,.06);
+  --text:     #efefef;
+  --text2:    #999;
+  --text3:    #555;
+  --green:    #3fd68a;
+  --blue:     #4da6ff;
+  --purple:   #a78bfa;
+  --yellow:   #f5c542;
+  --red:      #f06060;
+  --font:     'IBM Plex Sans', sans-serif;
+  --mono:     'IBM Plex Mono', monospace;
+  --disp:     'Syne', sans-serif;
+  --r:        6px;
+  --shadow:   0 4px 24px rgba(0,0,0,.6);
+}
+ 
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html,body { height: 100%; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 50% 0, rgba(255,101,0,.04) 0%, transparent 60%),
+    radial-gradient(1px 1px at 1px 1px, #1c1c1c 1px, transparent 0);
+  background-size: auto, 26px 26px;
+}
+ 
+/* ── TOPBAR ───────────────────────────────────── */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  height: 54px;
+  background: rgba(14,14,14,.96);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border2);
+  padding: 0 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+}
+ 
+.brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.brand-mark {
+  width: 30px; height: 30px;
+  background: var(--accent);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  box-shadow: 0 0 16px rgba(255,101,0,.45);
+}
+.brand-name {
+  font-family: var(--disp);
+  font-size: 13px; font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--text);
+  line-height: 1.1;
+}
+.brand-name em { color: var(--accent); font-style: normal; }
+ 
+.topbar-stats { display: flex; gap: 6px; flex: 1; justify-content: center; }
+.stat-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3px 11px;
+  font-size: 11px; font-family: var(--mono); color: var(--text3);
+  white-space: nowrap; transition: border-color .2s;
+}
+.stat-pill .n { font-weight: 600; }
+.stat-pill.s-active .n { color: var(--yellow); }
+.stat-pill.s-done .n   { color: var(--green); }
+.stat-pill.s-all .n    { color: var(--text2); }
+ 
+.topbar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+ 
+/* ── BUTTONS ────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: none; border-radius: var(--r);
+  font-family: var(--font); font-size: 12px; font-weight: 600;
+  cursor: pointer; padding: 7px 13px; transition: all .15s;
+  white-space: nowrap; letter-spacing: .2px;
+}
+.btn i { font-size: 14px; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #e05900; box-shadow: 0 0 18px rgba(255,101,0,.35); }
+.btn-ghost {
+  background: var(--bg3); color: var(--text2);
+  border: 1px solid var(--border2);
+}
+.btn-ghost:hover { color: var(--text); background: var(--bg4); border-color: var(--border3); }
+.btn-icon { padding: 7px; aspect-ratio: 1; }
+.btn-danger { background: rgba(240,96,96,.1); color: var(--red); border: 1px solid rgba(240,96,96,.2); }
+.btn-danger:hover { background: rgba(240,96,96,.18); }
+ 
+/* ── EXPORT DROPDOWN ───────────────────────── */
+.dropdown { position: relative; }
+.dropdown-menu {
+  display: none; position: absolute; top: calc(100% + 6px); right: 0;
+  background: var(--bg4); border: 1px solid var(--border2);
+  border-radius: 8px; overflow: hidden;
+  box-shadow: var(--shadow); min-width: 160px; z-index: 200;
+  animation: fadeDown .12s ease;
+}
+@keyframes fadeDown { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+.dropdown-menu.open { display: block; }
+.dropdown-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 14px; font-size: 12px; color: var(--text2);
+  cursor: pointer; transition: all .1s; border: none;
+  background: none; width: 100%; text-align: left;
+  font-family: var(--font); font-weight: 500;
+}
+.dropdown-item:hover { background: var(--accent-d); color: var(--accent); }
+.dropdown-item i { font-size: 14px; }
+.dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
+ 
+/* ── BOARD ───────────────────────────────────── */
+.board-wrap {
+  padding: 16px; overflow-x: auto;
+  display: flex; gap: 12px;
+  min-height: calc(100vh - 54px);
+  align-items: flex-start;
+}
+ 
+.column {
+  min-width: 252px; width: 252px;
+  background: var(--bg3);
+  border-radius: 9px; border: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  flex-shrink: 0; overflow: hidden;
+  transition: border-color .2s;
+}
+ 
+.col-header {
+  padding: 11px 13px 9px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.col-title-row { display: flex; align-items: center; gap: 7px; }
+.col-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.col-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.1px; color: var(--text2); }
+.col-count {
+  background: var(--bg4); border: 1px solid var(--border2);
+  border-radius: 10px; font-size: 10px; font-weight: 700;
+  font-family: var(--mono); padding: 1px 8px; color: var(--text3);
+}
+.col-iniciar    .col-dot { background: var(--blue); box-shadow: 0 0 6px var(--blue); }
+.col-criando    .col-dot { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+.col-crawler    .col-dot { background: var(--purple); box-shadow: 0 0 6px var(--purple); }
+.col-finalizado .col-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+ 
+.col-body {
+  padding: 8px; min-height: 130px;
+  display: flex; flex-direction: column; gap: 6px; flex: 1;
+  transition: background .15s;
+}
+.col-body.drag-over { background: var(--accent-g); outline: 1px dashed rgba(255,101,0,.3); outline-offset: -4px; border-radius: 5px; }
+.col-empty {
+  color: var(--text3); font-size: 11px; text-align: center;
+  padding: 22px 0; font-style: italic;
+}
+ 
+/* ── CARD ───────────────────────────────────── */
+.card {
+  background: var(--bg4); border: 1px solid var(--border2);
+  border-radius: 7px; padding: 11px 11px 9px;
+  cursor: grab; position: relative;
+  transition: border-color .15s, transform .1s, box-shadow .15s;
+  user-select: none;
+  animation: card-in .18s ease;
+}
+@keyframes card-in { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+.card:hover { border-color: rgba(255,101,0,.3); box-shadow: 0 4px 20px rgba(0,0,0,.35); }
+.card.dragging { opacity: .3; transform: scale(.95); cursor: grabbing; }
+ 
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; }
+.card-meta { flex: 1; min-width: 0; }
+.card-name {
+  font-size: 13px; font-weight: 600; color: var(--accent2);
+  cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: color .15s; display: block;
+}
+.card-name:hover { color: #ffb070; }
+.card-id {
+  font-size: 10px; color: var(--text3); font-family: var(--mono);
+  cursor: pointer; margin-top: 2px; transition: color .15s;
+}
+.card-id:hover { color: var(--text2); }
+ 
+.card-actions { display: flex; gap: 1px; flex-shrink: 0; margin-left: 5px; }
+.card-btn {
+  background: none; border: none; color: var(--text3);
+  cursor: pointer; font-size: 14px; padding: 3px 4px;
+  border-radius: 4px; line-height: 1; transition: all .13s;
+}
+.card-btn:hover        { color: var(--accent); background: var(--accent-d); }
+.card-btn.del:hover    { color: var(--red);    background: rgba(240,96,96,.1); }
+ 
+.card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+.tag {
+  font-size: 9px; padding: 2px 7px; border-radius: 10px;
+  font-weight: 600; letter-spacing: .3px; font-family: var(--mono);
+}
+.tag-crawler { background: rgba(77,166,255,.1); color: var(--blue); border: 1px solid rgba(77,166,255,.2); }
+.tag-manual  { background: rgba(245,197,66,.1);  color: var(--yellow); border: 1px solid rgba(245,197,66,.2); }
+.tag-fazer   { background: rgba(240,96,96,.1);  color: var(--red);    border: 1px solid rgba(240,96,96,.2); }
+.tag-feito   { background: rgba(63,214,138,.1); color: var(--green);  border: 1px solid rgba(63,214,138,.2); }
+ 
+.card-links { margin-top: 8px; display: flex; gap: 4px; flex-wrap: wrap; }
+.link-em {
+  font-size: 14px; cursor: pointer; text-decoration: none;
+  padding: 3px 6px; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--bg3);
+  transition: all .14s; position: relative;
+  display: inline-flex; align-items: center;
+}
+.link-em:hover { border-color: rgba(255,101,0,.35); background: var(--accent-d); transform: scale(1.08); }
+.link-em .tip {
+  display: none; position: absolute; bottom: calc(100% + 5px); left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg5); border: 1px solid var(--border2);
+  border-radius: 4px; padding: 3px 8px; font-size: 10px;
+  white-space: nowrap; color: var(--text); pointer-events: none;
+  z-index: 20; font-family: var(--font);
+  box-shadow: 0 2px 10px rgba(0,0,0,.4);
+}
+.link-em:hover .tip { display: block; }
+ 
+/* ── OVERLAY ─────────────────────────────────── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.82); z-index: 100;
+  align-items: center; justify-content: center;
+}
+.overlay.open { display: flex; }
+ 
+/* ── MODAL BASE ─────────────────────────────── */
+.modal {
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-top: 2px solid var(--accent);
+  border-radius: 10px; width: 540px;
+  max-width: 98vw; max-height: 92vh; overflow-y: auto;
+  padding: 24px; box-shadow: var(--shadow);
+  animation: modal-in .18s ease;
+}
+@keyframes modal-in { from { opacity:0; transform:scale(.96) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+ 
+.modal-hd {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+}
+.modal-title {
+  font-family: var(--disp); font-size: 14px; font-weight: 700;
+  color: var(--text); text-transform: uppercase; letter-spacing: .5px;
+}
+.modal-close {
+  background: none; border: none; color: var(--text3);
+  cursor: pointer; font-size: 16px; padding: 3px; border-radius: 4px;
+  transition: color .15s; display: flex; align-items: center;
+}
+.modal-close:hover { color: var(--text); }
+ 
+/* ── FORM ELEMENTS ─────────────────────────── */
+.frow   { display: flex; gap: 12px; margin-bottom: 13px; }
+.fgroup { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.flabel { font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: .6px; }
+.finput {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 5px; color: var(--text); font-size: 13px;
+  padding: 8px 11px; font-family: var(--font); outline: none;
+  transition: border-color .15s, box-shadow .15s; width: 100%;
+}
+.finput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,101,0,.1); }
+.finput::placeholder { color: var(--text3); }
+select.finput option { background: var(--bg3); }
+ 
+/* ── PRODUCTS IN MODAL ──────────────────────── */
+.prods-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  font-size: 10px; color: var(--text3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .6px;
+}
+.prods-hd .pc { font-family: var(--mono); color: var(--text3); }
+ 
+.prod-row {
+  display: flex; gap: 6px; margin-bottom: 5px; align-items: center;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 5px; padding: 7px 9px; transition: border-color .15s;
+}
+.prod-row:hover { border-color: var(--border2); }
+.prod-row input {
+  background: none; border: none; color: var(--text); font-size: 12px;
+  outline: none; font-family: var(--font); padding: 0; flex: 2; min-width: 0;
+}
+.prod-row input.pid { flex: 1; font-family: var(--mono); font-size: 11px; color: var(--text2); }
+.prod-row input::placeholder { color: var(--text3); }
+.prod-sep { color: var(--border2); flex-shrink: 0; font-size: 14px; }
+.prod-row select {
+  flex: 1.5; background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 11px; border-radius: 4px;
+  padding: 3px 6px; outline: none; font-family: var(--font); cursor: pointer;
+  transition: border-color .15s;
+}
+.prod-row select:focus { border-color: var(--accent); }
+.prod-row select option { background: var(--bg3); }
+ 
+.btn-rm {
+  background: none; border: none; color: var(--text3);
+  cursor: pointer; font-size: 13px; padding: 3px 5px;
+  border-radius: 4px; transition: all .13s; flex-shrink: 0;
+  display: flex; align-items: center;
+}
+.btn-rm:hover { color: var(--red); background: rgba(240,96,96,.1); }
+ 
+.btn-add-prod {
+  width: 100%; background: none; border: 1px dashed var(--border2);
+  color: var(--text3); border-radius: 5px;
+  font-size: 11px; cursor: pointer; padding: 7px;
+  margin-top: 5px; transition: all .15s; font-family: var(--font);
+}
+.btn-add-prod:hover { color: var(--accent); border-color: rgba(255,101,0,.4); background: var(--accent-g); }
+ 
+.modal-ft {
+  display: flex; justify-content: flex-end; gap: 8px;
+  margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border);
+}
+ 
+/* ── DETAIL MODAL ───────────────────────────── */
+.det-section { margin-bottom: 18px; }
+.det-title {
+  font-size: 10px; color: var(--text3); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid var(--border);
+}
+.prod-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; background: var(--bg2);
+  border-radius: 5px; margin-bottom: 4px;
+  font-size: 12px; border: 1px solid var(--border);
+}
+.prod-item-name { flex: 1; color: var(--text); }
+.prod-item-id { color: var(--text3); font-size: 11px; font-family: var(--mono); }
+.sdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.sd-c { background: var(--blue); }
+.sd-m { background: var(--yellow); }
+.sd-f { background: var(--red); }
+.sd-ok { background: var(--green); }
+ 
+/* ── COPY MODAL ─────────────────────────────── */
+.copy-box {
+  background: var(--bg2); border: 1px solid rgba(255,101,0,.18);
+  border-radius: 5px; padding: 14px;
+  font-size: 12px; color: var(--text); line-height: 1.8;
+  white-space: pre-wrap; font-family: var(--mono); margin-bottom: 12px;
+}
+.copy-ok { color: var(--green); font-size: 11px; text-align: center; margin-top: 8px; display: none; }
+ 
+/* ── ARCHIVE PANEL ──────────────────────────── */
+.arc-backdrop {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.55); z-index: 88;
+}
+.arc-backdrop.open { display: block; }
+.arc-panel {
+  position: fixed; top: 0; right: -460px; width: 460px; max-width: 100vw; height: 100%;
+  background: var(--bg3); border-left: 1px solid var(--border2);
+  z-index: 89; transition: right .3s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,.55);
+}
+.arc-panel.open { right: 0; }
+.arc-hd {
+  padding: 18px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.arc-hd h2 { font-family: var(--disp); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+.arc-filters {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0; display: flex; gap: 8px; flex-wrap: wrap;
+}
+.arc-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+.arc-date-grp { margin-bottom: 22px; }
+.arc-date-lbl {
+  font-size: 10px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 7px; padding: 4px 9px;
+  background: var(--bg2); border-radius: 4px;
+  font-family: var(--mono); display: inline-block;
+}
+.arc-card {
+  background: var(--bg4); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 12px; margin-bottom: 5px;
+  cursor: pointer; transition: all .14s;
+}
+.arc-card:hover { border-color: rgba(255,101,0,.3); box-shadow: 0 2px 12px rgba(0,0,0,.3); }
+.arc-card-name { font-size: 13px; font-weight: 600; color: var(--accent2); margin-bottom: 3px; }
+.arc-card-meta { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+.arc-card-links { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.arc-empty { color: var(--text3); font-size: 12px; text-align: center; padding: 44px 0; line-height: 1.8; }
+ 
+/* ── BOT MODAL ─────────────────────────────── */
+.bot-modal { width: 600px; }
+.bot-hint {
+  font-size: 11px; color: var(--text3); margin-bottom: 12px; line-height: 1.7;
+  padding: 8px 11px; background: var(--bg2); border-radius: 5px;
+  border-left: 2px solid var(--accent);
+}
+.bot-hint em { color: var(--text2); }
+.bot-chat {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 6px; min-height: 160px; max-height: 280px;
+  overflow-y: auto; padding: 10px; margin-bottom: 10px;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.bmsg {
+  padding: 9px 12px; border-radius: 6px; font-size: 12px;
+  line-height: 1.65; max-width: 92%; white-space: pre-wrap;
+  animation: msg-in .16s ease;
+}
+@keyframes msg-in { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
+.bmsg.ai   { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); align-self: flex-start; }
+.bmsg.user { background: rgba(255,101,0,.1); border: 1px solid rgba(255,101,0,.18); color: var(--text); align-self: flex-end; }
+.bmsg.loading { color: var(--text3); font-style: italic; }
+.bot-textarea { resize: none; min-height: 70px; }
+ 
+/* ── CONFIG MODAL ───────────────────────────── */
+.cfg-modal { width: 400px; }
+.cfg-note { font-size: 11px; color: var(--text3); margin-top: 5px; line-height: 1.5; }
+ 
+/* ── SCROLLBAR ──────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
+ 
+/* ── TOAST ─────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px);
+  background: var(--bg4); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 10px 18px; font-size: 12px; color: var(--text);
+  z-index: 300; box-shadow: var(--shadow); transition: transform .25s ease;
+  display: flex; align-items: center; gap: 8px; pointer-events: none;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+#toast.ok   { border-color: rgba(63,214,138,.3); }
+#toast.err  { border-color: rgba(240,96,96,.3); }
+ 
+@media (max-width: 640px) {
+  .topbar-stats { display: none; }
+  .brand-name { font-size: 11px; }
+  .arc-panel { width: 100%; }
+}
+</style>
+</head>
+<body>
+ 
+<!-- ══ TOPBAR ══════════════════════════════════════════════════════ -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">⚡</div>
+    <div class="brand-name">Controle de <em>Migração</em></div>
+  </div>
+ 
+  <div class="topbar-stats" id="topbarStats"></div>
+ 
+  <div class="topbar-right">
+    <button class="btn btn-ghost" onclick="openBot()">
+      <i class="ti ti-robot"></i> Bot IA
+    </button>
+ 
+    <div class="dropdown" id="expDrop">
+      <button class="btn btn-ghost" onclick="toggleExpMenu()">
+        <i class="ti ti-download"></i> Exportar <i class="ti ti-chevron-down" style="font-size:10px"></i>
+      </button>
+      <div class="dropdown-menu" id="expMenu">
+        <button class="dropdown-item" onclick="exportCSV()">
+          <i class="ti ti-file-type-csv"></i> CSV (Excel)
+        </button>
+        <button class="dropdown-item" onclick="exportCSVFinished()">
+          <i class="ti ti-file-check"></i> CSV · Só Finalizados
+        </button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" onclick="exportJSON()">
+          <i class="ti ti-code"></i> Backup JSON
+        </button>
+      </div>
+    </div>
+ 
+    <button class="btn btn-ghost" onclick="openArchive()">
+      <i class="ti ti-archive"></i> Arquivo
+    </button>
+ 
+    <button class="btn btn-ghost btn-icon" onclick="openCfg()" title="Configurações">
+      <i class="ti ti-settings"></i>
+    </button>
+ 
+    <button class="btn btn-primary" onclick="openAdd()">
+      <i class="ti ti-plus"></i> Novo Cliente
+    </button>
+  </div>
+</div>
+ 
+<!-- ══ BOARD ═══════════════════════════════════════════════════════ -->
+<div class="board-wrap" id="board"></div>
+ 
+<!-- ══ ARCHIVE ═════════════════════════════════════════════════════ -->
+<div class="arc-backdrop" id="arcBd" onclick="closeArchive()"></div>
+<div class="arc-panel" id="arcPanel">
+  <div class="arc-hd">
+    <h2>📁 Arquivo · Migrações Finalizadas</h2>
+    <button class="modal-close" onclick="closeArchive()"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="arc-filters">
+    <input type="text" class="finput" id="arcSearch" placeholder="🔍  Buscar…" oninput="renderArchive()" style="flex:1;min-width:0">
+    <input type="date" class="finput" id="arcFrom" onchange="renderArchive()" style="width:132px">
+    <input type="date" class="finput" id="arcTo"   onchange="renderArchive()" style="width:132px">
+  </div>
+  <div class="arc-body" id="arcBody"></div>
+</div>
+ 
+<!-- ══ ADD / EDIT MODAL ════════════════════════════════════════════ -->
+<div class="overlay" id="modalOv" onclick="ovClick(event)">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title" id="modalTitle">Novo Cliente</div>
+      <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+ 
+    <div class="frow">
+      <div class="fgroup">
+        <label class="flabel">Nome do Cliente</label>
+        <input type="text" class="finput" id="fName" placeholder="Ex: Empresa XYZ">
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fgroup">
+        <label class="flabel">Link da Tarefa</label>
+        <input type="text" class="finput" id="fTaskLink" placeholder="https://…">
+      </div>
+      <div class="fgroup">
+        <label class="flabel">Link do Crawler</label>
+        <input type="text" class="finput" id="fCrawlerLink" placeholder="https://…">
+      </div>
+    </div>
+ 
+    <div style="margin-top:16px">
+      <div class="prods-hd">
+        <span>Produtos & IDs</span>
+        <span class="pc" id="pcnt"></span>
+      </div>
+      <div id="prodList"></div>
+      <button class="btn-add-prod" onclick="addProd()">+ Adicionar Produto</button>
+    </div>
+ 
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveClient()"><i class="ti ti-check"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- ══ DETAIL MODAL ════════════════════════════════════════════════ -->
+<div class="overlay" id="detailOv" onclick="ovClick(event)">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title" id="detailTitle">Detalhes</div>
+      <button class="modal-close" onclick="closeDetail()"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="detailContent"></div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeDetail()">Fechar</button>
+      <button class="btn btn-primary" onclick="editFromDetail()"><i class="ti ti-pencil"></i> Editar</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- ══ COPY MESSAGE MODAL ══════════════════════════════════════════ -->
+<div class="overlay" id="copyOv">
+  <div class="modal" style="width:480px">
+    <div class="modal-hd">
+      <div class="modal-title">Mensagem de Finalização</div>
+      <button class="modal-close" onclick="closeCopy()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="copy-box" id="copyText"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doCopy()">
+      <i class="ti ti-copy"></i> Copiar Mensagem
+    </button>
+    <div class="copy-ok" id="copyOk">✓ Copiado para a área de transferência!</div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeCopy()">Fechar</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- ══ BOT MODAL ═══════════════════════════════════════════════════ -->
+<div class="overlay" id="botOv" onclick="ovClick(event)">
+  <div class="modal bot-modal">
+    <div class="modal-hd">
+      <div class="modal-title">🤖 Bot de Preenchimento</div>
+      <button class="modal-close" onclick="closeBot()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="bot-hint">
+      💡 Mande as informações em texto livre e eu crio o card automaticamente.<br>
+      Ex: <em>"Cliente: Empresa XYZ — Produto: Notebook ID 123 crawler, Mouse ID 456 manual — tarefa: https://…"</em><br>
+      <span style="color:#444">· Ctrl+Enter para enviar</span>
+    </div>
+    <div class="bot-chat" id="botChat"></div>
+    <textarea class="finput bot-textarea" id="botInput" placeholder="Digite as informações aqui…" onkeydown="botKey(event)"></textarea>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeBot()">Fechar</button>
+      <button class="btn btn-primary" id="botSend" onclick="sendBot()">
+        <i class="ti ti-send"></i> Enviar
+      </button>
+    </div>
+  </div>
+</div>
+ 
+<!-- ══ CONFIG MODAL ════════════════════════════════════════════════ -->
+<div class="overlay" id="cfgOv" onclick="ovClick(event)">
+  <div class="modal cfg-modal">
+    <div class="modal-hd">
+      <div class="modal-title">⚙ Configurações</div>
+      <button class="modal-close" onclick="closeCfg()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="fgroup" style="margin-bottom:16px">
+      <label class="flabel">Chave API Anthropic (Bot IA)</label>
+      <input type="password" class="finput" id="cfgKey" placeholder="sk-ant-api03-…">
+      <p class="cfg-note">Salva localmente no seu navegador. Necessária para o Bot IA preencher cards automaticamente. Obtenha em <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent2)">console.anthropic.com</a>.</p>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeCfg()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCfg()"><i class="ti ti-check"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- ══ TOAST ═══════════════════════════════════════════════════════ -->
+<div id="toast"></div>
+ 
+<!-- ══ SCRIPT ══════════════════════════════════════════════════════ -->
+<script>
+// ── DATA ──────────────────────────────────────────────────────────
+const COLS = [
+  { id: 'iniciar',    label: 'Iniciar',            cls: 'col-iniciar' },
+  { id: 'criando',    label: 'Criando Produtos',   cls: 'col-criando' },
+  { id: 'crawler',    label: 'Crawler',            cls: 'col-crawler' },
+  { id: 'finalizado', label: 'Finalizado',         cls: 'col-finalizado' }
+];
+ 
+let clients  = parse(localStorage.getItem('mgClients'), []);
+let editId   = null;
+let detailId = null;
+let dragId   = null;
+ 
+function parse(s, def) { try { return JSON.parse(s) || def; } catch { return def; } }
+function save() { localStorage.setItem('mgClients', JSON.stringify(clients)); updateStats(); }
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+ 
+// ── STATS ─────────────────────────────────────────────────────────
+function updateStats() {
+  const total  = clients.length;
+  const active = clients.filter(c => c.status !== 'finalizado').length;
+  const done   = clients.filter(c => c.status === 'finalizado').length;
+  document.getElementById('topbarStats').innerHTML =
+    `<div class="stat-pill s-all"><span class="n">${total}</span> total</div>
+     <div class="stat-pill s-active"><span class="n">${active}</span> em andamento</div>
+     <div class="stat-pill s-done"><span class="n">${done}</span> finalizados</div>`;
+}
+ 
+// ── BOARD ─────────────────────────────────────────────────────────
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  COLS.forEach(col => {
+    const cc = clients.filter(c => c.status === col.id);
+    const el = document.createElement('div');
+    el.className = `column ${col.cls}`;
+    el.innerHTML = `
+      <div class="col-header">
+        <div class="col-title-row">
+          <div class="col-dot"></div>
+          <span class="col-title">${col.label}</span>
+        </div>
+        <span class="col-count">${cc.length}</span>
+      </div>
+      <div class="col-body" data-col="${col.id}" id="col-${col.id}">
+        ${cc.length === 0 ? '<div class="col-empty">Nenhum cliente</div>' : ''}
+      </div>`;
+    board.appendChild(el);
+ 
+    const body = el.querySelector('.col-body');
+    body.addEventListener('dragover', e => { e.preventDefault(); body.classList.add('drag-over'); });
+    body.addEventListener('dragleave', () => body.classList.remove('drag-over'));
+    body.addEventListener('drop', e => {
+      e.preventDefault(); body.classList.remove('drag-over');
+      if (!dragId) return;
+      const c = clients.find(x => x.id === dragId);
+      if (c && c.status !== col.id) {
+        c.status = col.id;
+        if (col.id === 'finalizado') c.completedAt = c.completedAt || Date.now();
+        else delete c.completedAt;
+        save(); renderBoard();
+        if (col.id === 'finalizado') showCopy(c);
+      }
+      dragId = null;
+    });
+    cc.forEach(c => body.appendChild(makeCard(c)));
+  });
+  updateStats();
+}
+ 
+function makeCard(c) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.draggable = true;
+  el.dataset.id = c.id;
+  el.addEventListener('dragstart', () => { dragId = c.id; setTimeout(() => el.classList.add('dragging'), 10); });
+  el.addEventListener('dragend',   () => { el.classList.remove('dragging'); dragId = null; });
+ 
+  const prods = c.products || [];
+  const ids   = prods.map(p => p.id).filter(Boolean);
+  const idTxt = ids.length ? '#' + ids[0] + (prods.length > 1 ? ` <span style="color:var(--text3)">+${prods.length-1}</span>` : '') : 'sem ID';
+ 
+  const hasCrawler = prods.some(p => p.type === 'crawler');
+  const hasMp      = prods.some(p => p.type === 'manual_pendente');
+  const hasMf      = prods.some(p => p.type === 'manual_feito');
+  const hasFazer   = prods.some(p => p.type === 'fazer');
+ 
+  const tags =
+    (hasCrawler ? `<span class="tag tag-crawler">Crawler</span>` : '') +
+    (hasMp      ? `<span class="tag tag-manual">Manual Pendente</span>` : '') +
+    (hasMf      ? `<span class="tag tag-feito">Manual ✓</span>` : '') +
+    (hasFazer   ? `<span class="tag tag-fazer">A Fazer</span>` : '');
+ 
+  const linkTask    = c.taskLink    ? `<a class="link-em" href="${esc(c.taskLink)}"    target="_blank"><span>💻</span><span class="tip">Tarefa</span></a>` : '';
+  const linkCrawler = c.crawlerLink ? `<a class="link-em" href="${esc(c.crawlerLink)}" target="_blank"><span>🕷️</span><span class="tip">Crawler</span></a>` : '';
+ 
+  el.innerHTML = `
+    <div class="card-top">
+      <div class="card-meta">
+        <span class="card-name" onclick="openDetail('${c.id}')">${esc(c.name) || 'Sem nome'}</span>
+        <div class="card-id" onclick="openDetail('${c.id}')">${idTxt}</div>
+      </div>
+      <div class="card-actions">
+        <button class="card-btn" onclick="openEdit('${c.id}')" title="Editar"><i class="ti ti-pencil"></i></button>
+        <button class="card-btn del" onclick="delClient('${c.id}')" title="Excluir"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>
+    ${tags ? `<div class="card-tags">${tags}</div>` : ''}
+    ${linkTask || linkCrawler ? `<div class="card-links">${linkTask}${linkCrawler}</div>` : ''}`;
+  return el;
+}
+ 
+// ── OVERLAY CLICK ─────────────────────────────────────────────────
+function ovClick(e) { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); }
+ 
+// ── ADD / EDIT ────────────────────────────────────────────────────
+function openAdd() {
+  editId = null;
+  document.getElementById('modalTitle').textContent = 'Novo Cliente';
+  document.getElementById('fName').value = '';
+  document.getElementById('fTaskLink').value = '';
+  document.getElementById('fCrawlerLink').value = '';
+  document.getElementById('prodList').innerHTML = '';
+  addProd();
+  document.getElementById('modalOv').classList.add('open');
+  setTimeout(() => document.getElementById('fName').focus(), 80);
+}
+ 
+function openEdit(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  editId = id;
+  document.getElementById('modalTitle').textContent = 'Editar Cliente';
+  document.getElementById('fName').value       = c.name || '';
+  document.getElementById('fTaskLink').value   = c.taskLink || '';
+  document.getElementById('fCrawlerLink').value = c.crawlerLink || '';
+  document.getElementById('prodList').innerHTML = '';
+  const pp = c.products && c.products.length ? c.products : [null];
+  pp.forEach(p => addProd(p));
+  updPcnt();
+  document.getElementById('modalOv').classList.add('open');
+}
+ 
+function addProd(p) {
+  const div = document.createElement('div');
+  div.className = 'prod-row';
+  div.innerHTML = `
+    <input type="text" placeholder="Nome do produto" value="${esc(p && p.name ? p.name : '')}" class="pname">
+    <span class="prod-sep">·</span>
+    <input type="text" placeholder="ID" value="${esc(p && p.id ? p.id : '')}" class="pid">
+    <select class="ptype">
+      <option value="crawler"         ${p && p.type==='crawler'         ? 'selected':''}>Crawler</option>
+      <option value="manual_pendente" ${p && p.type==='manual_pendente' ? 'selected':''}>Manual — Pendente</option>
+      <option value="manual_feito"    ${p && p.type==='manual_feito'    ? 'selected':''}>Manual — Feito</option>
+      <option value="fazer"           ${p && p.type==='fazer'           ? 'selected':''}>A Fazer</option>
+    </select>
+    <button class="btn-rm" onclick="rmProd(this)" title="Remover produto"><i class="ti ti-x" style="font-size:12px"></i></button>`;
+  document.getElementById('prodList').appendChild(div);
+  updPcnt();
+}
+ 
+function rmProd(btn) { btn.closest('.prod-row').remove(); updPcnt(); }
+function updPcnt() {
+  const n = document.querySelectorAll('#prodList .prod-row').length;
+  document.getElementById('pcnt').textContent = n ? `${n} produto${n>1?'s':''}` : '';
+}
+ 
+function saveClient() {
+  const name = document.getElementById('fName').value.trim();
+  if (!name) { toast('Informe o nome do cliente.', 'err'); return; }
+  const prods = [];
+  document.querySelectorAll('#prodList .prod-row').forEach(row => {
+    const n = row.querySelector('.pname').value.trim();
+    const i = row.querySelector('.pid').value.trim();
+    const t = row.querySelector('.ptype').value;
+    if (n || i) prods.push({ name: n, id: i, type: t });
+  });
+ 
+  if (editId) {
+    const c = clients.find(x => x.id === editId);
+    Object.assign(c, {
+      name,
+      taskLink:    document.getElementById('fTaskLink').value.trim(),
+      crawlerLink: document.getElementById('fCrawlerLink').value.trim(),
+      products:    prods
+    });
+  } else {
+    clients.push({
+      id: genId(), name, status: 'iniciar', createdAt: Date.now(),
+      taskLink:    document.getElementById('fTaskLink').value.trim(),
+      crawlerLink: document.getElementById('fCrawlerLink').value.trim(),
+      products: prods
+    });
+  }
+  save(); renderBoard(); closeModal();
+  toast(editId ? '✓ Cliente atualizado' : '✓ Cliente criado', 'ok');
+}
+ 
+function closeModal() { document.getElementById('modalOv').classList.remove('open'); }
+ 
+function delClient(id) {
+  if (!confirm('Excluir este cliente? Esta ação não pode ser desfeita.')) return;
+  clients = clients.filter(c => c.id !== id);
+  save(); renderBoard();
+  toast('Cliente excluído.', 'ok');
+}
+ 
+// ── DETAIL ────────────────────────────────────────────────────────
+function openDetail(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  detailId = id;
+  document.getElementById('detailTitle').textContent = c.name || 'Sem nome';
+ 
+  const stMap = { iniciar:'Iniciar', criando:'Criando Produtos', crawler:'Crawler', finalizado:'Finalizado' };
+  let h = `<div class="det-section"><div class="det-title">Informações Gerais</div>`;
+  h += `<p style="font-size:12px;margin-bottom:5px">Status: <strong style="color:var(--text)">${stMap[c.status]||c.status}</strong></p>`;
+  if (c.createdAt)   h += `<p style="font-size:11px;color:var(--text3);margin-bottom:3px">Criado: ${fmtDate(c.createdAt)}</p>`;
+  if (c.completedAt) h += `<p style="font-size:11px;color:var(--green);margin-bottom:5px">✓ Finalizado: ${fmtDate(c.completedAt)}</p>`;
+  if (c.taskLink)    h += `<p style="font-size:12px;margin-bottom:5px">💻 <span style="color:var(--text3)">Tarefa:</span> <a href="${esc(c.taskLink)}" target="_blank" style="color:var(--accent2);word-break:break-all">${esc(c.taskLink)}</a></p>`;
+  if (c.crawlerLink) h += `<p style="font-size:12px">🕷️ <span style="color:var(--text3)">Crawler:</span> <a href="${esc(c.crawlerLink)}" target="_blank" style="color:var(--accent2);word-break:break-all">${esc(c.crawlerLink)}</a></p>`;
+  h += `</div>`;
+ 
+  const pp = c.products || [];
+  if (pp.length) {
+    h += `<div class="det-section"><div class="det-title">Produtos & IDs (${pp.length})</div>`;
+    pp.forEach(p => {
+      let dc = 'sd-c', tl = 'Crawler', tc = 'tag-crawler';
+      if (p.type==='manual_pendente') { dc='sd-m'; tl='Manual — Pendente'; tc='tag-manual'; }
+      if (p.type==='manual_feito')    { dc='sd-ok'; tl='Manual — Feito';   tc='tag-feito'; }
+      if (p.type==='fazer')           { dc='sd-f'; tl='A Fazer';           tc='tag-fazer'; }
+      h += `<div class="prod-item">
+        <div class="sdot ${dc}"></div>
+        <div class="prod-item-name">${esc(p.name)||'—'}</div>
+        <div class="prod-item-id">${p.id ? '#'+esc(p.id) : ''}</div>
+        <span class="tag ${tc}" style="font-size:9px">${tl}</span>
+      </div>`;
+    });
+    h += `</div>`;
+  }
+ 
+  document.getElementById('detailContent').innerHTML = h;
+  document.getElementById('detailOv').classList.add('open');
+}
+function closeDetail() { document.getElementById('detailOv').classList.remove('open'); }
+function editFromDetail() { closeDetail(); openEdit(detailId); }
+ 
+// ── COPY ──────────────────────────────────────────────────────────
+function showCopy(c) {
+  const ids = (c.products||[]).map(p=>p.id).filter(Boolean).join(', ');
+  const msg = `waiting for conference: ${c.name}${ids?' ('+ids+')':''}\nOnboarder\nDescrição da migração: Migração finalizada aguardando conferência\nLink da tarefa: ${c.taskLink||'(sem link)'}`;
+  document.getElementById('copyText').textContent = msg;
+  document.getElementById('copyOk').style.display = 'none';
+  document.getElementById('copyOv').classList.add('open');
+}
+function closeCopy() { document.getElementById('copyOv').classList.remove('open'); }
+function doCopy() {
+  navigator.clipboard.writeText(document.getElementById('copyText').textContent).then(() => {
+    const el = document.getElementById('copyOk');
+    el.style.display = 'block';
+    toast('✓ Mensagem copiada!', 'ok');
+    setTimeout(() => el.style.display = 'none', 3000);
+  });
+}
+ 
+// ── ARCHIVE ───────────────────────────────────────────────────────
+function openArchive() {
+  document.getElementById('arcPanel').classList.add('open');
+  document.getElementById('arcBd').classList.add('open');
+  renderArchive();
+}
+function closeArchive() {
+  document.getElementById('arcPanel').classList.remove('open');
+  document.getElementById('arcBd').classList.remove('open');
+}
+ 
+function renderArchive() {
+  const q     = (document.getElementById('arcSearch').value || '').toLowerCase();
+  const from  = document.getElementById('arcFrom').value;
+  const to    = document.getElementById('arcTo').value;
+ 
+  let fin = clients.filter(c => c.status === 'finalizado');
+  if (q)    fin = fin.filter(c => (c.name||'').toLowerCase().includes(q));
+  if (from) fin = fin.filter(c => c.completedAt && new Date(c.completedAt) >= new Date(from));
+  if (to)   fin = fin.filter(c => c.completedAt && new Date(c.completedAt) <= new Date(to+'T23:59:59'));
+  fin.sort((a,b) => (b.completedAt||0) - (a.completedAt||0));
+ 
+  const body = document.getElementById('arcBody');
+  if (!fin.length) {
+    body.innerHTML = '<div class="arc-empty">Nenhuma migração finalizada<br>encontrada com esses filtros.</div>';
+    return;
+  }
+ 
+  const groups = {};
+  fin.forEach(c => {
+    const k = c.completedAt ? fmtDateLong(c.completedAt) : 'Data desconhecida';
+    (groups[k] = groups[k]||[]).push(c);
+  });
+ 
+  let h = '';
+  Object.entries(groups).forEach(([date, items]) => {
+    h += `<div class="arc-date-grp">
+      <div class="arc-date-lbl">📅 ${date} · ${items.length} cliente${items.length>1?'s':''}</div>`;
+    items.forEach(c => {
+      const n = (c.products||[]).length;
+      const ids = (c.products||[]).map(p=>p.id).filter(Boolean).slice(0,3).join(', ');
+      h += `<div class="arc-card" onclick="viewArcClient('${c.id}')">
+        <div class="arc-card-name">${esc(c.name)||'Sem nome'}</div>
+        <div class="arc-card-meta">${n} produto${n!==1?'s':''}${ids?' · #'+esc(ids):''}</div>
+        <div class="arc-card-links">${c.taskLink?'💻 Tarefa':''}${c.taskLink&&c.crawlerLink?' · ':''}${c.crawlerLink?'🕷️ Crawler':''}</div>
+      </div>`;
+    });
+    h += `</div>`;
+  });
+  body.innerHTML = h;
+}
+ 
+function viewArcClient(id) { closeArchive(); openDetail(id); }
+ 
+// ── EXPORT ────────────────────────────────────────────────────────
+function toggleExpMenu() { document.getElementById('expMenu').classList.toggle('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('#expDrop')) document.getElementById('expMenu').classList.remove('open'); });
+ 
+function exportCSV(onlyFinished) {
+  document.getElementById('expMenu').classList.remove('open');
+  const stMap = { iniciar:'Iniciar', criando:'Criando Produtos', crawler:'Crawler', finalizado:'Finalizado' };
+  const data  = onlyFinished ? clients.filter(c => c.status==='finalizado') : clients;
+  const rows  = [['Cliente','Status','Produto','ID Produto','Tipo Produto','Link Tarefa','Link Crawler','Criado em','Finalizado em']];
+ 
+  data.forEach(c => {
+    const pp = c.products && c.products.length ? c.products : [{}];
+    pp.forEach((p, i) => {
+      rows.push([
+        i===0 ? (c.name||'') : '',
+        i===0 ? (stMap[c.status]||c.status) : '',
+        p.name||'', p.id||'', p.type||'',
+        i===0 ? (c.taskLink||'')    : '',
+        i===0 ? (c.crawlerLink||'') : '',
+        i===0 && c.createdAt   ? fmtDate(c.createdAt)   : '',
+        i===0 && c.completedAt ? fmtDate(c.completedAt) : ''
+      ]);
+    });
+  });
+ 
+  const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], { type:'text/csv;charset=utf-8;' });
+  dlBlob(blob, `migracoes${onlyFinished?'_finalizadas':''}_${isoDate()}.csv`);
+  toast('✓ CSV exportado!', 'ok');
+}
+function exportCSVFinished() { exportCSV(true); }
+function exportJSON() {
+  document.getElementById('expMenu').classList.remove('open');
+  dlBlob(new Blob([JSON.stringify(clients, null, 2)], {type:'application/json'}), `migracoes_backup_${isoDate()}.json`);
+  toast('✓ Backup JSON exportado!', 'ok');
+}
+function dlBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name; a.click();
+  URL.revokeObjectURL(a.href);
+}
+ 
+// ── BOT ───────────────────────────────────────────────────────────
+function openBot() {
+  const chat = document.getElementById('botChat');
+  if (!chat.children.length) addBmsg('ai', 'Olá! Mande as informações do cliente em texto livre e eu crio o card automaticamente. 🚀');
+  document.getElementById('botOv').classList.add('open');
+  setTimeout(() => document.getElementById('botInput').focus(), 80);
+}
+function closeBot() { document.getElementById('botOv').classList.remove('open'); }
+function botKey(e) { if (e.key==='Enter' && (e.ctrlKey||e.metaKey)) sendBot(); }
+ 
+function addBmsg(type, text) {
+  const chat = document.getElementById('botChat');
+  const div  = document.createElement('div');
+  div.className = `bmsg ${type}`;
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+ 
+async function sendBot() {
+  const input = document.getElementById('botInput');
+  const text  = input.value.trim();
+  if (!text) return;
+ 
+  const apiKey = localStorage.getItem('mgApiKey');
+  if (!apiKey) {
+    addBmsg('ai', '⚠️ Nenhuma chave API configurada. Vá em ⚙ Configurações para adicionar.');
+    return;
+  }
+ 
+  addBmsg('user', text);
+  input.value = '';
+  const loading = addBmsg('ai loading', '⏳ Processando suas informações…');
+  document.getElementById('botSend').disabled = true;
+ 
+  const sys = `Você é um assistente que extrai dados de clientes de migrações de e-commerce.
+Retorne APENAS JSON válido, sem markdown, sem explicação, sem preamble.
+Formato:
+{
+  "name": "nome do cliente",
+  "taskLink": "url ou null",
+  "crawlerLink": "url ou null",
+  "products": [{ "name": "nome", "id": "id ou vazio", "type": "crawler|manual_pendente|manual_feito|fazer" }]
+}
+Regras de type: "crawler" → crawler; "manual feito"/"manual ✓" → manual_feito; "manual" sem confirmação → manual_pendente; "a fazer"/"fazer" → fazer. Padrão: crawler.
+Campos ausentes: use null ou [].`;
+ 
+  try {
+    const res  = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'x-api-key': apiKey, 'anthropic-version':'2023-06-01' },
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, system: sys, messages:[{role:'user',content:text}] })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const raw    = data.content[0].text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(raw);
+ 
+    loading.remove();
+    const nc = {
+      id: genId(), name: parsed.name||'Novo Cliente',
+      status:'iniciar', createdAt: Date.now(),
+      taskLink:    parsed.taskLink    || '',
+      crawlerLink: parsed.crawlerLink || '',
+      products: (parsed.products||[]).map(p => ({ name:p.name||'', id:p.id||'', type:p.type||'crawler' }))
+    };
+    clients.push(nc); save(); renderBoard();
+ 
+    const psum = nc.products.length
+      ? nc.products.map(p => `  • ${p.name||'—'} (${p.id||'sem ID'}) [${p.type}]`).join('\n')
+      : '  (sem produtos)';
+    addBmsg('ai', `✅ Card criado!\n\nCliente: ${nc.name}\nProdutos:\n${psum}\n\nAdicionado na coluna "Iniciar".`);
+    toast('✓ Card criado pelo Bot!', 'ok');
+  } catch(err) {
+    loading.remove();
+    addBmsg('ai', `❌ Erro: ${err.message}\n\nVerifique sua chave API nas ⚙ Configurações.`);
+  }
+  document.getElementById('botSend').disabled = false;
+}
+ 
+// ── CONFIG ────────────────────────────────────────────────────────
+function openCfg() {
+  document.getElementById('cfgKey').value = localStorage.getItem('mgApiKey') || '';
+  document.getElementById('cfgOv').classList.add('open');
+}
+function closeCfg() { document.getElementById('cfgOv').classList.remove('open'); }
+function saveCfg() {
+  const k = document.getElementById('cfgKey').value.trim();
+  if (k) localStorage.setItem('mgApiKey', k);
+  else   localStorage.removeItem('mgApiKey');
+  closeCfg();
+  toast('✓ Configurações salvas!', 'ok');
+}
+ 
+// ── TOAST ─────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+ 
+// ── UTILS ─────────────────────────────────────────────────────────
+function fmtDate(ts)     { return new Date(ts).toLocaleDateString('pt-BR'); }
+function fmtDateLong(ts) { return new Date(ts).toLocaleDateString('pt-BR', {day:'2-digit', month:'long', year:'numeric'}); }
+function isoDate()       { return new Date().toISOString().slice(0,10); }
+ 
+// ── INIT ──────────────────────────────────────────────────────────
+renderBoard();
+</script>
+</body>
+</html>
